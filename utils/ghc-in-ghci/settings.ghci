@@ -36,3 +36,7 @@
 :set -DGHCI
 :set -DGHC_LOADED_INTO_GHCI
 :set -XNoImplicitPrelude
+
+-- Setup args so that running "main" will run ghci and set the prompt to
+-- indicate that it is an inner ghci.
+:set args --interactive -ghci-script utils/ghc-in-ghci/inner.ghci
