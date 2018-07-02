@@ -228,10 +228,32 @@ test:
 slowtest fulltest:
 	$(MAKE) -C testsuite/tests CLEANUP=1 SUMMARY_FILE=../../testsuite_summary.txt slow
 
+# The ghci-load and ghci-start targets run the compiled ghc-stage2 with a
+# configuration that allows loading GHC into GHCi.
+#
+# * "make ghci-load" will cause it to load GHC's Main module, causing everything
+#   to get loaded. Once it has successfully loaded, running "main" will run a
+#   nested ghci that can allow you to experiment with your changes. You can use
+#   ":main ARGS" or ":set args ..." to specify some other options, perhaps using
+#   the loaded GHC as a compiler rather than an interpreter.
+#
+# * "make ghci-start" will just start a configured ghci, so that you can choose
+#   which module to ":load".
+#
+# This is substantially faster than doing an actual compile, and so can aid in
+# tighter development iterations. It can be made even faster by specifying "-jN"
+# for parallelism. Typically choosing an N value close to the number of logical
+# CPU cores you have leads to faster loads. Here's how to specify -j:
+#
+# make ghci-load ARGS="-j4"
+#
+# This `ARGS` option can also be used for passing other options to the outer
+# ghci.
+
 .PHONY: ghci-load
 ghci-load:
-	inplace/bin/ghc-stage2 --interactive -ghci-script utils/ghc-in-ghci/load-main.ghci -odir tmp -hidir tmp +RTS -A128m -RTS -j$(N)
+	inplace/bin/ghc-stage2 --interactive -ghci-script utils/ghc-in-ghci/load-main.ghci -odir tmp -hidir tmp +RTS -A128m -RTS $(ARGS)
 
 .PHONY: ghci-start
 ghci-start:
-	inplace/bin/ghc-stage2 --interactive -ghci-script utils/ghc-in-ghci/settings.ghci -odir tmp -hidir tmp +RTS -A128m -RTS -j$(N)
+	inplace/bin/ghc-stage2 --interactive -ghci-script utils/ghc-in-ghci/settings.ghci -odir tmp -hidir tmp +RTS -A128m -RTS $(ARGS)
