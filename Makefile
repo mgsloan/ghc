@@ -103,8 +103,6 @@ REALGOALS=$(filter-out \
     fulltest \
     slowtest \
     fasttest \
-    ghci-load \
-    ghci-start \
   ,$(MAKECMDGOALS))
 
 # configure touches certain files even if they haven't changed.  This
