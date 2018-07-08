@@ -1,0 +1,29 @@
+#!/bin/sh -xe
+
+# Runs ghc-stage2 with GHCi settings that allow GHC to be loaded and run in the
+# interpreter. Options provided on the commandline will be passed directly to
+# the GHCi invocation.
+
+# This is substantially faster than doing an actual compile, and so can aid in
+# tighter development iterations. It can be made even faster by specifying "-jN"
+# for parallelism. Typically choosing an N value close to the number of logical
+# CPU cores you have leads to faster loads. Here's how to specify -j:
+
+# ./ghci-start -j4
+
+# Within ghci, you can use `:load Main` to load GHC's main module (or just use
+# the `ghci-load` script). After that, running `main` will run an inner GHCi
+# instance that uses the loaded code. This is because there is a default `:set
+# args --interactive ...`. To pass some different arguments to the loaded GHC,
+# `:set args ...` or `:main ...` can be used.
+
+
+export _GHC_TOP_DIR=./inplace/lib
+
+exec ./inplace/bin/ghc-stage2 \
+    --interactive \
+    -ghci-script ./utils/ghc-in-ghci/settings.ghci \
+    -odir ./ghci-tmp \
+    -hidir ./ghci-tmp \
+    +RTS -A128m -RTS \
+    "$@"

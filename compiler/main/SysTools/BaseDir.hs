@@ -22,10 +22,11 @@ import GhcPrelude
 
 import Panic
 
+import System.Environment (lookupEnv)
 import System.FilePath
 import Data.List
 
-#if defined(mingw32_HOST_OS) || defined(GHC_LOADED_INTO_GHCI)
+#if defined(mingw32_HOST_OS)
 import System.Directory
 #endif
 
@@ -118,50 +119,17 @@ findTopDir :: Maybe String -- Maybe TopDir path (without the '-B' prefix).
            -> IO String    -- TopDir (in Unix format '/' separated)
 findTopDir (Just minusb) = return (normalise minusb)
 findTopDir Nothing
-    = do -- Get directory of executable
-         maybe_exec_dir <- getBaseDir
-         case maybe_exec_dir of
-             -- "Just" on Windows, "Nothing" on unix
-             Nothing  -> throwGhcExceptionIO (InstallationError "missing -B<dir> option")
-             Just dir -> ghciTopDirWorkaround dir
-
--- Usually this does nothing. The purpose of it is to allow GHC to
--- function when loaded into GHCi, without requiring manual
--- specification of a -B path. Without this workaround, it attempts to
--- read "inplace/lib/lib/settings", which does not exist.
-ghciTopDirWorkaround :: String -> IO String
-#if !defined(GHC_LOADED_INTO_GHCI)
-ghciTopDirWorkaround dir = return dir
-#else
-ghciTopDirWorkaround dir = do
-    exists <- doesDirectoryExist dir
-    if exists
-        then do
-            putStrLn $ unwords
-                [ "Note: Due to -DGHC_LOADED_INTO_GHCI, did not expect that"
-                , show dir
-                , "would exist, but it does, so using it instead of its parent."
-                ]
-            return dir
-        else do
-            let parent = takeDirectory dir
-            parentExists <- doesDirectoryExist parent
-            if parentExists
-                then do
-                    putStrLn $ unwords
-                        [ "Note: Due to -DGHC_LOADED_INTO_GHCI, guessing that"
-                        , show parent
-                        , "should be used as the topdir."
-                        ]
-                    return parent
-                else do
-                    putStrLn $ concat
-                        [ "Note: Due to -DGHC_LOADED_INTO_GHCI, expected"
-                        , show parent
-                        , "to be an existent topdir, but it doesn't exist."
-                        ]
-                    return dir
-#endif
+    = do maybe_env_top_dir <- lookupEnv "_GHC_TOP_DIR"
+         case maybe_env_top_dir of
+             Just env_top_dir -> return env_top_dir
+             Nothing -> do
+                 -- Get directory of executable
+                 maybe_exec_dir <- getBaseDir
+                 case maybe_exec_dir of
+                     -- "Just" on Windows, "Nothing" on unix
+                     Nothing -> throwGhcExceptionIO $
+                         InstallationError "missing -B<dir> option"
+                     Just dir -> return dir
 
 getBaseDir :: IO (Maybe String)
 #if defined(mingw32_HOST_OS)

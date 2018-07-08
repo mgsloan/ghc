@@ -1,2 +1,1 @@
-:script utils/ghc-in-ghci/settings.ghci
 :load Main

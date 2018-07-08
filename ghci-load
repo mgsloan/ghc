@@ -1,0 +1,14 @@
+#!/bin/sh -xe
+
+# Runs ghc-stage2 with GHCi settings that allow GHC to be loaded and run in the
+# interpreter. Immediately runs `:load Main` to load GHC's main. After a
+# successful load, you can use `main` to run a GHCi using the code that was
+# loaded.
+
+# Other than the initial `:load Main`, it is the same as the `ghci-start`
+# script. Please take a look at that file for additional documentation.
+
+
+exec ./ghci-start \
+    -ghci-script ./utils/ghc-in-ghci/load-main.ghci \
+    "$@"
